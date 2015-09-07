@@ -10,7 +10,7 @@ This example also includes some challenge problems :)
 
 import Graphics.Element exposing (..)
 import Text
-
+import String
 
 type Tree a
     = Empty
@@ -59,13 +59,20 @@ map f tree =
       Node v left right ->
           Node (f v) (map f left) (map f right)
 
+map2 : (a -> b) -> (b -> c) -> Tree a -> Tree c
+map2 f1 f2 tree =
+  case tree of
+    Empty -> Empty
+    Node v left right ->
+      Node (f2 (f1 v)) (map2 f1 f2 left) (map2 f1 f2 right)
+
 
 sum: Tree number -> number
 sum tree =
   case tree of
     Empty -> 0
     Node v left right ->
-      v + (sum left) + (sum right)
+      sum left + v + sum right
 
 diagram tree =
   case tree of
@@ -89,25 +96,46 @@ isElement a tree =
         then True
         else isElement a left || isElement a right
 
-t1 = fromList [6,3,4,1,7,9,3,6]
+fold : (a -> b -> b) -> b -> Tree a -> b
+fold f r tree =
+  case tree of
+    Empty -> r
+    Node v left right ->
+      -- pre order (left < v < right)
+      fold f (f v (fold f r left)) right
+
+concat : String -> String -> String -> String
+concat delimiter a b =
+  if String.length b > 0
+    then a ++ delimiter ++ b
+    else a
+
+add n r =
+  n + r
+
+
+t1 = fromList [2,1,3,5]
 t2 = fromList [1,2,3,4,5]
 
 --
--- main : Element
--- main =
---     flow down
---         [ display "depth" depth t1
---         , display "depth" depth t2
---         , display "map ((+)1)" (map ((+)1)) t2
---         , display "sum" sum t1
---         , display "flatten" flatten t1
---         , display "diagram" diagram t1
---         ]
+main : Element
 main =
-  (if isElement 7 t1 then "true" else "false")
-  |> Text.fromString
-  |> Text.monospace
-  |> leftAligned
+    flow down
+        [ display "depth" depth t1
+        , display "depth" depth t2
+        , display "map ((+)1)" (map ((+)1)) t2
+        , display "sum" sum t1
+        , display "flatten" flatten t1
+        , display "diagram" diagram t1
+        , display "fold" (fold (concat " < ") "") (map toString t1)
+        , display "foldSum" (fold add 0) t1
+        , display "map2" flatten ((map2 ((+)1) ((*)2)) t1)
+        ]
+-- main =
+--   (if isElement 7 t1 then "true" else "false")
+--   |> Text.fromString
+--   |> Text.monospace
+--   |> leftAligned
 
 
 display : String -> (Tree a -> b) -> Tree a -> Element
